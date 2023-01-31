@@ -37,8 +37,8 @@ class Generator(nn.Module):
             nn.ReLU())
 
         self.conv6_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 32, 3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU())
         self.conv7_layer = nn.Sequential(
             nn.Conv2d(64, 16, 3, stride=1, padding=1),

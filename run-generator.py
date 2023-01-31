@@ -2,17 +2,10 @@ from generator import Generator
 import numpy as np
 import matplotlib.pyplot as plt
 import torch 
-from torchvision import transforms
 torch.manual_seed(17)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
-
-transform = transforms.Compose([
-        transforms.Resize(28),
-        transforms.ToTensor(),
-        transforms.Normalize([0.,], [1.])
-])
 
 gen = Generator()
 img = torch.from_numpy(np.random.normal(size=(32, 32)).astype(np.float32))
