@@ -49,7 +49,8 @@ class Discriminator(nn.Module):
             nn.ReLU())
         self.linear3_layer = nn.Sequential(
             nn.Linear(in_features=2048, out_features=1),
-            nn.Sigmoid())
+            #nn.Sigmoid()
+        )
     
     def __conv_head(self, inp):
         out = self.conv0_layer(inp)

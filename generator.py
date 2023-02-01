@@ -9,43 +9,63 @@ class Generator(nn.Module):
         self.conv0_layer = nn.Sequential(
             nn.Conv2d(1, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64),
+            nn.AvgPool2d(2),
             nn.ReLU())
 
         # Big residual block
         self.conv1_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU())
         self.conv2_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(128, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
+            nn.AvgPool2d(2),
             nn.ReLU())
 
         # Small residual block 1
         self.conv3_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
+            nn.Conv2d(128, 256, 3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU())
 
         # Small residual block 2
         self.conv4_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU())
         
         # Small residual block 3
         self.conv5_layer = nn.Sequential(
-            nn.Conv2d(64, 64, 3, stride=1, padding=1),
-            nn.ReLU())
-
-        self.conv6_layer = nn.Sequential(
-            nn.Conv2d(64, 32, 3, stride=1, padding=1),
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
             nn.BatchNorm2d(32),
             nn.ReLU())
+
+        # Small residual block 4
+        self.conv9_layer = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU())
+
+        # Small residual block 5
+        self.conv10_layer = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            nn.Upsample(scale_factor=2, mode='bilinear'),
+            nn.ReLU())
+
+
+        self.conv6_layer = nn.Sequential(
+            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.BatchNorm2d(256),
+            nn.Upsample(scale_factor=2, mode='bilinear'),
+            nn.ReLU())
         self.conv7_layer = nn.Sequential(
-            nn.Conv2d(32, 16, 3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(256, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU())
         self.conv8_layer = nn.Sequential(
-            nn.Conv2d(16, 1, 3, stride=1, padding=1),
+            nn.Conv2d(128, 1, 3, stride=1, padding=1),
             nn.ReLU())
         
         # self.output_layer = nn.Linear(
@@ -64,7 +84,11 @@ class Generator(nn.Module):
         res = out
         out = self.conv4_layer(out) * res
         res = out
-        out = self.conv5_layer(out) * res * big_res
+        out = self.conv5_layer(out) * res
+        res = out
+        out = self.conv9_layer(out) * res
+        res = out
+        out = self.conv10_layer(out) * res * big_res
 
         return out
 

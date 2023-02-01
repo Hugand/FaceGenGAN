@@ -27,7 +27,7 @@ class FaceGenGAN(nn.Module):
 
 		for i in range(n_batches):
 			# Generate batch noisy images
-			noise_imgs = torch.from_numpy(np.random.normal(size=(batch_size, 1, 32, 32)).astype(np.float32)).to(device)
+			noise_imgs = torch.from_numpy(np.random.random_sample(size=(batch_size, 1, 32, 32)).astype(np.float32)).to(device)
 
 			# reset the gradients back to zero
 			# PyTorch accumulates gradients on subsequent backward passes
@@ -45,6 +45,8 @@ class FaceGenGAN(nn.Module):
 			# perform parameter update based on current gradients
 			# only for the generator
 			optimizer.step()
+
+			#print("2", list(self.generator.parameters())[0].grad[:2])
 			
 			# add the mini-batch training loss to epoch loss
 			loss += train_loss.item()
@@ -66,10 +68,12 @@ class FaceGenGAN(nn.Module):
 
 		for i in range(n_batches):
 			# Generate batch noisy images
-			noise_imgs = torch.from_numpy(np.random.normal(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
+			noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
 			batch_imgs = torch.cat([real_imgs[i], noise_imgs], dim=0).to(device)
 			batch_imgs_labels = torch.from_numpy(np.array( ([[1]] * int(batch_size / 2)) + ([[0]] * int(batch_size / 2)), dtype=np.float32 )).to(device)
 			
+			#print(noise_imgs[0][0][0])
+
 			# reset the gradients back to zero
 			# PyTorch accumulates gradients on subsequent backward passes
 			optimizer.zero_grad()
@@ -86,6 +90,7 @@ class FaceGenGAN(nn.Module):
 			# perform parameter update based on current gradients
 			# only for the generator
 			optimizer.step()
+			#print("2", list(self.discriminator.parameters())[0].grad[:2])
 			
 			# add the mini-batch training loss to epoch loss
 			loss += train_loss.item()
@@ -113,10 +118,10 @@ class FaceGenGAN(nn.Module):
 		real_imgs = torch.reshape(real_imgs, (N_BATCHES*2, int(batch_size / 2)) + real_imgs.shape[1:]).to(device)
 		print(f'Real imgs shape: {real_imgs.shape} - {device}')
 
-		criterion = nn.BCELoss()
+		criterion = nn.BCEWithLogitsLoss()
 
-		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.02, betas=(0.5, 0.999))
-		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.002, betas=(0.5, 0.999))
+		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1, betas=(0.5, 0.999))
+		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1, betas=(0.5, 0.999))
 		print("Start training...")
 		for epoch in range(epochs):
 			loss = 0
