@@ -69,6 +69,7 @@ class FaceGenGAN(nn.Module):
 		for i in range(n_batches):
 			# Generate batch noisy images
 			noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
+			noise_imgs = self.generator(noise_imgs)
 			batch_imgs = torch.cat([real_imgs[i], noise_imgs], dim=0).to(device)
 			batch_imgs_labels = torch.from_numpy(np.array( ([[1]] * int(batch_size / 2)) + ([[0]] * int(batch_size / 2)), dtype=np.float32 )).to(device)
 			batch_imgs = Variable(batch_imgs, requires_grad=True)

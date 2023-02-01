@@ -7,102 +7,51 @@ class Generator(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.conv0_layer = nn.Sequential(
-            nn.Conv2d(1, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            nn.AvgPool2d(2),
-            nn.ReLU())
+            nn.ConvTranspose2d(32*32, 1024, 3, stride=1, padding=1),
+            nn.BatchNorm2d(1024),
+            nn.ReLU(True))
 
-        # Big residual block
         self.conv1_layer = nn.Sequential(
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU())
+            nn.ConvTranspose2d(1024, 1024, 3, stride=1, padding=1),
+            nn.BatchNorm2d(1024),
+            nn.ReLU(True))
         self.conv2_layer = nn.Sequential(
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU())
+            nn.ConvTranspose2d(1024, 512, 3, stride=1, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(True))
 
-        # Small residual block 1
         self.conv3_layer = nn.Sequential(
-            nn.Conv2d(128, 256, 3, stride=1, padding=1),
+            nn.ConvTranspose2d(512, 256, 3, stride=1, padding=1),
             nn.BatchNorm2d(256),
-            nn.ReLU())
+            nn.ReLU(True))
 
-        # Small residual block 2
         self.conv4_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, stride=1, padding=1),
             nn.BatchNorm2d(256),
-            nn.ReLU())
+            nn.ReLU(True))
         
-        # Small residual block 3
         self.conv5_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU())
-
-        # Small residual block 4
-        self.conv9_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU())
-
-        # Small residual block 5
-        self.conv10_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            #nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.ReLU())
-
+            nn.ConvTranspose2d(256, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(True))
 
         self.conv6_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.Upsample(scale_factor=2, mode='bilinear'),
-            nn.ReLU())
-        self.conv7_layer = nn.Sequential(
-            nn.Conv2d(256, 128, 3, stride=1, padding=1),
+             nn.ConvTranspose2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU())
-        self.conv8_layer = nn.Sequential(
-            nn.Conv2d(128, 1, 3, stride=1, padding=1),
-            nn.ReLU())
-        
-        # self.output_layer = nn.Linear(
-        #     in_features=32*32*8, out_features=kwargs["output_shape"]
-        # )
-    
-    def __head(self, inp):
-        residual = inp
-        out = self.conv1_layer(inp)
-        out = self.conv2_layer(out) * residual
-        return out
+            nn.ReLU(True))
 
-    def __residual_batches(self, inp):
-        out = self.conv3_layer(inp)
-        big_res = out
-        res = out
-        out = self.conv4_layer(out) * res
-        res = out
-        out = self.conv5_layer(out) * res
-        res = out
-        out = self.conv9_layer(out) * res
-        res = out
-        out = self.conv10_layer(out) * res * big_res
-
-        return out
-
-    def __output_construction(self, inp):
-        out = self.conv6_layer(inp)
-        out = self.conv7_layer(out)
-        out = self.conv8_layer(out)
-        
-        return out
+        self.conv7_layer = nn.Sequential(
+            nn.ConvTranspose2d(128, 1, 3, stride=1, padding=1),
+            nn.Tanh())
 
     def forward(self, features):
         out = self.conv0_layer(features)
-
-        out = self.__head(out)
-        out = self.__residual_batches(out)
-        reconstructed = self.__output_construction(out)
+        out = self.conv1_layer(out)
+        out = self.conv2_layer(out)
+        out = self.conv3_layer(out)
+        out = self.conv4_layer(out)
+        out = self.conv5_layer(out)
+        out = self.conv6_layer(out)
+        reconstructed = self.conv7_layer(out)
 
         return reconstructed.view(-1, 1, 32, 32)
