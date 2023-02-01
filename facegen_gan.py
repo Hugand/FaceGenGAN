@@ -28,7 +28,7 @@ class FaceGenGAN(nn.Module):
 		for i in range(n_batches):
 			# Generate batch noisy images
 			noise_imgs = torch.from_numpy(np.random.random_sample(size=(batch_size, 1, 32, 32)).astype(np.float32)).to(device)
-
+			noise_imgs = Variable(noise_imgs, requires_grad=True)
 			# reset the gradients back to zero
 			# PyTorch accumulates gradients on subsequent backward passes
 			optimizer.zero_grad()
@@ -71,7 +71,8 @@ class FaceGenGAN(nn.Module):
 			noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
 			batch_imgs = torch.cat([real_imgs[i], noise_imgs], dim=0).to(device)
 			batch_imgs_labels = torch.from_numpy(np.array( ([[1]] * int(batch_size / 2)) + ([[0]] * int(batch_size / 2)), dtype=np.float32 )).to(device)
-			
+			batch_imgs = Variable(batch_imgs, requires_grad=True)
+			batch_imgs_labels = Variable(batch_imgs_labels, requires_grad=True)
 			#print(noise_imgs[0][0][0])
 
 			# reset the gradients back to zero

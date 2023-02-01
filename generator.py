@@ -7,51 +7,50 @@ class Generator(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
         self.conv0_layer = nn.Sequential(
-            nn.Conv2d(1, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
+            nn.Conv2d(1, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),
             nn.AvgPool2d(2),
             nn.ReLU())
 
         # Big residual block
         self.conv1_layer = nn.Sequential(
-            nn.Conv2d(64, 128, 3, stride=1, padding=1),
+            nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU())
         self.conv2_layer = nn.Sequential(
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
             nn.BatchNorm2d(128),
-            nn.AvgPool2d(2),
             nn.ReLU())
 
         # Small residual block 1
         self.conv3_layer = nn.Sequential(
             nn.Conv2d(128, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(256),
             nn.ReLU())
 
         # Small residual block 2
         self.conv4_layer = nn.Sequential(
             nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(256),
             nn.ReLU())
         
         # Small residual block 3
         self.conv5_layer = nn.Sequential(
             nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(256),
             nn.ReLU())
 
         # Small residual block 4
         self.conv9_layer = nn.Sequential(
             nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(256),
             nn.ReLU())
 
         # Small residual block 5
         self.conv10_layer = nn.Sequential(
             nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
-            nn.Upsample(scale_factor=2, mode='bilinear'),
+            nn.BatchNorm2d(256),
+            #nn.Upsample(scale_factor=2, mode='bilinear'),
             nn.ReLU())
 
 
@@ -79,8 +78,8 @@ class Generator(nn.Module):
         return out
 
     def __residual_batches(self, inp):
-        big_res = inp
-        out = self.conv3_layer(inp) * big_res
+        out = self.conv3_layer(inp)
+        big_res = out
         res = out
         out = self.conv4_layer(out) * res
         res = out
