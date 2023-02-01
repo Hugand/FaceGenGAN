@@ -8,11 +8,11 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
 
 gen = Generator()
-img = torch.from_numpy(np.random.normal(size=(32, 32)).astype(np.float32))
-img = img.unsqueeze(0)
-img = img.unsqueeze(0)
+img = torch.from_numpy(np.random.normal(size=(20, 1, 32, 32)).astype(np.float32))
+# img = img.unsqueeze(0)
+# img = img.unsqueeze(0)
 
-print(img.shape)
+print(img.shape, img.shape[:2])
 
 generated_img = gen(img)
 

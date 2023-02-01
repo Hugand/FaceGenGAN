@@ -7,9 +7,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
 
 disc = Discriminator()
-img = torch.from_numpy(np.random.normal(size=(32, 32)).astype(np.float32))
-img = img.unsqueeze(0)
-img = img.unsqueeze(0)
+img = torch.from_numpy(np.random.normal(size=(3, 1, 32, 32)).astype(np.float32))
 
 print(img.shape)
 
