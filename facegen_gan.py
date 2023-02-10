@@ -138,8 +138,11 @@ class FaceGenGAN(nn.Module):
 		criterion_disriminator = nn.BCEWithLogitsLoss()
 		criterion_generator = nn.BCEWithLogitsLoss()
 
-		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1, betas=(0.5, 0.999))
-		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1, betas=(0.5, 0.999))
+		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1)
+		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1)
+
+		dummy_img = torch.full((1,), 1, dtype=torch.float, device=device)
+
 		print("Start training...")
 		for epoch in range(epochs):
 			loss = 0
@@ -188,5 +191,19 @@ class FaceGenGAN(nn.Module):
 			# plt.show()
 			# print("loss = {:.6f}, valid_loss = {:.6f}".format(loss, valid_loss))
 			#plt.clf()
+
+		clear_output(wait=True)
+
+		# Display stuff
+		fig, axs = plt.subplots(1, 2)
+		fig.set_figwidth(15)
+		fig.set_figheight(7)
+
+		#for ax in axs:
+		axs[0][0].imshow(torch.Tensor.cpu(dummy_img.reshape((1, 1, 32, 32)))[0][0], cmap='inferno')
+		axs[0][1].imshow(torch.Tensor.cpu(self.generator(dummy_img)).detach().numpy()[0][0], cmap='inferno')
+		plt.show()
+		#plt.clf()
+
 
 		return losses, valid_losses
