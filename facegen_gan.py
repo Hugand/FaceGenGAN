@@ -27,8 +27,9 @@ class FaceGenGAN(nn.Module):
 
 		for i in range(n_batches):
 			# Generate batch noisy images
-			noise_imgs = torch.from_numpy(np.random.random_sample(size=(batch_size, 1, 32, 32)).astype(np.float32)).to(device)
-			noise_imgs = Variable(noise_imgs, requires_grad=True)
+			#noise_imgs = torch.from_numpy(np.random.random_sample(size=(batch_size, 1, 32, 32)).astype(np.float32)).to(device)
+			noise_imgs = torch.rand(batch_size, 32*32, 1, 1, device=device)
+			#noise_imgs = Variable(noise_imgs, requires_grad=True)
 			# reset the gradients back to zero
 			# PyTorch accumulates gradients on subsequent backward passes
 			optimizer.zero_grad()
@@ -68,34 +69,48 @@ class FaceGenGAN(nn.Module):
 
 		for i in range(n_batches):
 			# Generate batch noisy images
-			noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
-			noise_imgs = self.generator(noise_imgs)
-			batch_imgs = torch.cat([real_imgs[i], noise_imgs], dim=0).to(device)
-			batch_imgs_labels = torch.from_numpy(np.array( ([[1]] * int(batch_size / 2)) + ([[0]] * int(batch_size / 2)), dtype=np.float32 )).to(device)
-			batch_imgs = Variable(batch_imgs, requires_grad=True)
-			batch_imgs_labels = Variable(batch_imgs_labels, requires_grad=True)
+			#noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
+			
+			#print(noise_imgs.shape)
+			#batch_imgs = torch.cat([real_imgs[i], noise_imgs], dim=0).to(device)
+			#batch_imgs_labels = torch.from_numpy(np.array( ([[1]] * int(batch_size / 2)) + ([[0]] * int(batch_size / 2)), dtype=np.float32 )).to(device)
+			#batch_imgs = Variable(batch_imgs, requires_grad=True)
+			#batch_imgs_labels = Variable(batch_imgs_labels, requires_grad=True)
 			#print(noise_imgs[0][0][0])
 
 			# reset the gradients back to zero
 			# PyTorch accumulates gradients on subsequent backward passes
 			optimizer.zero_grad()
 			
+			real_labels = torch.full((int(batch_size / 2),), 1, dtype=torch.float, device=device)
 			# compute reconstructions
-			outputs = self.discriminator(batch_imgs.to(device))
-			
+			outputs = self.discriminator(real_imgs[i].to(device)).view(-1)
 			# compute training reconstruction loss
-			train_loss = loss_criterion(outputs, batch_imgs_labels)
-
+			d_real_loss = loss_criterion(outputs, real_labels)
 			# compute accumulated gradients for generator and discriminator
-			train_loss.backward()
+			d_real_loss.backward()
+			d_loss = d_real_loss.mean().item()
 			
+			noise_imgs = torch.rand(int(batch_size / 2), 32*32, 1, 1, device=device)
+			noise_imgs = self.generator(noise_imgs)
+			fake_labels = torch.full((int(batch_size / 2),), 0, dtype=torch.float, device=device)
+			# compute reconstructions
+			outputs = self.discriminator(noise_imgs.detach()).view(-1)
+			# compute training reconstruction loss
+			d_fake_loss = loss_criterion(outputs, fake_labels)
+			# compute accumulated gradients for generator and discriminator
+			d_fake_loss.backward()
+			g_loss = d_fake_loss.mean().item()
+
+			d_loss = d_real_loss + d_fake_loss
+
 			# perform parameter update based on current gradients
 			# only for the generator
 			optimizer.step()
 			#print("2", list(self.discriminator.parameters())[0].grad[:2])
 			
 			# add the mini-batch training loss to epoch loss
-			loss += train_loss.item()
+			loss += d_loss.item()
 
 			#progress += step_size
 			batch_progress += 1
@@ -120,7 +135,8 @@ class FaceGenGAN(nn.Module):
 		real_imgs = torch.reshape(real_imgs, (N_BATCHES*2, int(batch_size / 2)) + real_imgs.shape[1:]).to(device)
 		print(f'Real imgs shape: {real_imgs.shape} - {device}')
 
-		criterion = nn.BCEWithLogitsLoss()
+		criterion_disriminator = nn.BCEWithLogitsLoss()
+		criterion_generator = nn.BCEWithLogitsLoss()
 
 		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1, betas=(0.5, 0.999))
 		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1, betas=(0.5, 0.999))
@@ -130,9 +146,9 @@ class FaceGenGAN(nn.Module):
 			print(f'[{training_phases[training_phase]}] Epoch {epoch}/{epochs} - ', end="")
 
 			if training_phase == 0:
-				loss = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion)
+				loss = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion_disriminator)
 			else:
-				loss = self.train_generator(N_BATCHES, batch_size, generator_optimizer, criterion)
+				loss = self.train_generator(N_BATCHES, batch_size, generator_optimizer, criterion_generator)
 
 			losses.append(loss)
 
