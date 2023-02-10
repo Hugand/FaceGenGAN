@@ -5,6 +5,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from generator import Generator
 from discriminator import Discriminator
+from IPython.display import clear_output
 import numpy as np
 import gc
 
@@ -15,7 +16,18 @@ class FaceGenGAN(nn.Module):
 	def __init__(self, **kwargs):
 		super().__init__()
 		self.generator = Generator().to(device)
+		self.generator.apply(self.__weights_init)
 		self.discriminator = Discriminator().to(device)
+		self.discriminator.apply(self.__weights_init)
+		
+
+	def __weights_init(m):
+		classname = m.__class__.__name__
+		if classname.find('Conv') != -1:
+			torch.nn.init.normal_(m.weight, 0.0, 0.02)
+		elif classname.find('BatchNorm') != -1:
+			torch.nn.init.normal_(m.weight, 1.0, 0.02)
+			torch.nn.init.zeros_(m.bias)
 
 	def forward(self, features):
 		return self.generator(features)
@@ -141,7 +153,7 @@ class FaceGenGAN(nn.Module):
 		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1)
 		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1)
 
-		dummy_img = torch.full((1,), 1, dtype=torch.float, device=device)
+		dummy_img = torch.rand(1, 32*32, 1, 1, device=device)
 
 		print("Start training...")
 		for epoch in range(epochs):
@@ -192,18 +204,18 @@ class FaceGenGAN(nn.Module):
 			# print("loss = {:.6f}, valid_loss = {:.6f}".format(loss, valid_loss))
 			#plt.clf()
 
-		clear_output(wait=True)
+			clear_output(wait=True)
 
-		# Display stuff
-		fig, axs = plt.subplots(1, 2)
-		fig.set_figwidth(15)
-		fig.set_figheight(7)
+			# Display stuff
+			fig, axs = plt.subplots(1, 2)
+			fig.set_figwidth(15)
+			fig.set_figheight(7)
 
-		#for ax in axs:
-		axs[0][0].imshow(torch.Tensor.cpu(dummy_img.reshape((1, 1, 32, 32)))[0][0], cmap='inferno')
-		axs[0][1].imshow(torch.Tensor.cpu(self.generator(dummy_img)).detach().numpy()[0][0], cmap='inferno')
-		plt.show()
-		#plt.clf()
+			#for ax in axs:
+			axs[0].imshow(torch.Tensor.cpu(dummy_img.reshape((1, 1, 32, 32)))[0][0], cmap='inferno')
+			axs[1].imshow(torch.Tensor.cpu(self.generator(dummy_img)).detach().numpy()[0][0], cmap='inferno')
+			plt.show()
+			#plt.clf()
 
 
 		return losses, valid_losses
