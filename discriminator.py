@@ -12,17 +12,17 @@ class Discriminator(nn.Module):
         self.conv1_layer = nn.Sequential(
             nn.Conv2d(64, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64),
-            nn.MaxPool2d(2),
-            nn.ReLU())
+            nn.ReLU(),
+            nn.MaxPool2d(2),)
 
         self.conv2_layer = nn.Sequential(
             nn.Conv2d(64, 128, 3, stride=1, padding=1),
             nn.ReLU())
         self.conv3_layer = nn.Sequential(
             nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            #nn.MaxPool2d(3), # For now remove this max pooling to keep the 16x16 img size
-            nn.ReLU())
+            nn.BatchNorm2d(128), # For now remove this max pooling to keep the 16x16 img size
+            nn.ReLU(),
+            nn.MaxPool2d(2), )
 
         self.conv4_layer = nn.Sequential(
             nn.Conv2d(128, 256, 3, stride=1, padding=1),
@@ -31,25 +31,26 @@ class Discriminator(nn.Module):
             nn.Conv2d(256, 256, 3, stride=1, padding=1),
             nn.ReLU())
         self.conv6_layer = nn.Sequential(
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU())
+            nn.Conv2d(256, 512, 3, stride=1, padding=1),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),)
+            #nn.MaxPool2d(2))
 
         # Linear layers
         self.linear0_layer = nn.Sequential(
-            nn.Linear(in_features=16*16*256, out_features=4096),
+            nn.Linear(in_features=8*8*512, out_features=4096),
             nn.ReLU())
         self.linear1_layer = nn.Sequential(
             nn.Linear(in_features=4096, out_features=2048),
             nn.Dropout(p=0.3),
             nn.ReLU())
         self.linear2_layer = nn.Sequential(
-            nn.Linear(in_features=2048, out_features=2048),
+            nn.Linear(in_features=2048, out_features=1024),
             nn.Dropout(p=0.3),
             nn.ReLU())
         self.linear3_layer = nn.Sequential(
-            nn.Linear(in_features=2048, out_features=1),
-            #nn.Sigmoid()
+            nn.Linear(in_features=1024, out_features=1),
+            nn.Sigmoid()
         )
     
     def __conv_head(self, inp):

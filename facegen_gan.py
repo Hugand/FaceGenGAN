@@ -21,7 +21,7 @@ class FaceGenGAN(nn.Module):
 		self.discriminator.apply(self.__weights_init)
 		
 
-	def __weights_init(m):
+	def __weights_init(self, m):
 		classname = m.__class__.__name__
 		if classname.find('Conv') != -1:
 			torch.nn.init.normal_(m.weight, 0.0, 0.02)
@@ -50,7 +50,8 @@ class FaceGenGAN(nn.Module):
 			outputs = self.discriminator(self.generator(noise_imgs))
 			
 			# compute training reconstruction loss
-			train_loss = loss_criterion(outputs, torch.from_numpy(np.array([[1]] * batch_size, dtype=np.float32)).to(device))
+			labels = torch.from_numpy(np.array([[1]] * batch_size, dtype=np.float32)).to(device)
+			train_loss = loss_criterion(outputs, labels)
 
 			# compute accumulated gradients for generator and discriminator
 			train_loss.backward()
@@ -78,7 +79,7 @@ class FaceGenGAN(nn.Module):
 		loss = 0
 		batch_progress = 0
 		print_step = n_batches * 0.1
-
+		correct = 0
 		for i in range(n_batches):
 			# Generate batch noisy images
 			#noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
@@ -102,13 +103,15 @@ class FaceGenGAN(nn.Module):
 			# compute accumulated gradients for generator and discriminator
 			d_real_loss.backward()
 			d_loss = d_real_loss.mean().item()
-			
+			#correct += torch.sum(outputs == real_labels)
+
 			noise_imgs = torch.rand(int(batch_size / 2), 32*32, 1, 1, device=device)
 			noise_imgs = self.generator(noise_imgs)
 			fake_labels = torch.full((int(batch_size / 2),), 0, dtype=torch.float, device=device)
 			# compute reconstructions
 			outputs = self.discriminator(noise_imgs.detach()).view(-1)
 			# compute training reconstruction loss
+			#correct += torch.sum(outputs == fake_labels)
 			d_fake_loss = loss_criterion(outputs, fake_labels)
 			# compute accumulated gradients for generator and discriminator
 			d_fake_loss.backward()
@@ -127,12 +130,15 @@ class FaceGenGAN(nn.Module):
 			#progress += step_size
 			batch_progress += 1
 
+
 			if batch_progress >= print_step:
 				#print(progress, step_size, print_step,len(train_data), n_batches)
 				print("#", end="")
 				batch_progress = 0
+        
+		#accuracy = correct / (len(real_labels) + len(fake_labels))
 
-		return loss / n_batches * 2
+		return loss / n_batches * 2, 10 #accuracy
 		
 
 	def train(self, real_imgs, epochs=10, batch_size=64, generator_epochs=10, discriminator_epochs=10):
@@ -147,11 +153,11 @@ class FaceGenGAN(nn.Module):
 		real_imgs = torch.reshape(real_imgs, (N_BATCHES*2, int(batch_size / 2)) + real_imgs.shape[1:]).to(device)
 		print(f'Real imgs shape: {real_imgs.shape} - {device}')
 
-		criterion_disriminator = nn.BCEWithLogitsLoss()
-		criterion_generator = nn.BCEWithLogitsLoss()
+		criterion_disriminator = nn.BCELoss()
+		criterion_generator = nn.BCELoss()
 
-		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.1)
-		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.1)
+		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
 
 		dummy_img = torch.rand(1, 32*32, 1, 1, device=device)
 
@@ -160,8 +166,12 @@ class FaceGenGAN(nn.Module):
 			loss = 0
 			print(f'[{training_phases[training_phase]}] Epoch {epoch}/{epochs} - ', end="")
 
+			generator_optimizer.zero_grad()
+			discriminator_optimizer.zero_grad()
+
 			if training_phase == 0:
-				loss = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion_disriminator)
+				loss, acc = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion_disriminator)
+				print(f', acc: {acc}')
 			else:
 				loss = self.train_generator(N_BATCHES, batch_size, generator_optimizer, criterion_generator)
 
@@ -204,7 +214,7 @@ class FaceGenGAN(nn.Module):
 			# print("loss = {:.6f}, valid_loss = {:.6f}".format(loss, valid_loss))
 			#plt.clf()
 
-			clear_output(wait=True)
+			#clear_output(wait=True)
 
 			# Display stuff
 			fig, axs = plt.subplots(1, 2)
