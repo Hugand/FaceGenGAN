@@ -50,8 +50,7 @@ class FaceGenGAN(nn.Module):
 			outputs = self.discriminator(self.generator(noise_imgs))
 			
 			# compute training reconstruction loss
-			labels = torch.from_numpy(np.array([[1]] * batch_size, dtype=np.float32)).to(device)
-			train_loss = loss_criterion(outputs, labels)
+			train_loss = loss_criterion(outputs, torch.from_numpy(np.array([[1]] * batch_size, dtype=np.float32)).to(device))
 
 			# compute accumulated gradients for generator and discriminator
 			train_loss.backward()
@@ -78,8 +77,9 @@ class FaceGenGAN(nn.Module):
 	def train_discriminator(self, real_imgs, n_batches, batch_size, optimizer, loss_criterion):
 		loss = 0
 		batch_progress = 0
-		print_step = n_batches * 0.1
-		correct = 0
+		print_step = n_batches * 0.
+		train_acc = 0.0
+
 		for i in range(n_batches):
 			# Generate batch noisy images
 			#noise_imgs = torch.from_numpy(np.random.random_sample(size=(int(batch_size / 2), 1, 32, 32)).astype(np.float32)).to(device)
@@ -103,19 +103,19 @@ class FaceGenGAN(nn.Module):
 			# compute accumulated gradients for generator and discriminator
 			d_real_loss.backward()
 			d_loss = d_real_loss.mean().item()
-			#correct += torch.sum(outputs == real_labels)
-
+			train_acc += torch.sum(outputs == 1)
+			
 			noise_imgs = torch.rand(int(batch_size / 2), 32*32, 1, 1, device=device)
 			noise_imgs = self.generator(noise_imgs)
 			fake_labels = torch.full((int(batch_size / 2),), 0, dtype=torch.float, device=device)
 			# compute reconstructions
 			outputs = self.discriminator(noise_imgs.detach()).view(-1)
 			# compute training reconstruction loss
-			#correct += torch.sum(outputs == fake_labels)
 			d_fake_loss = loss_criterion(outputs, fake_labels)
 			# compute accumulated gradients for generator and discriminator
 			d_fake_loss.backward()
 			g_loss = d_fake_loss.mean().item()
+			train_acc += torch.sum(outputs == 0)
 
 			d_loss = d_real_loss + d_fake_loss
 
@@ -130,15 +130,15 @@ class FaceGenGAN(nn.Module):
 			#progress += step_size
 			batch_progress += 1
 
-
 			if batch_progress >= print_step:
 				#print(progress, step_size, print_step,len(train_data), n_batches)
 				print("#", end="")
 				batch_progress = 0
-        
-		#accuracy = correct / (len(real_labels) + len(fake_labels))
 
-		return loss / n_batches * 2, 10 #accuracy
+		train_acc /= (n_batches * batch_size)
+		print(", Acc: ", train_acc)
+
+		return loss / n_batches * 2
 		
 
 	def train(self, real_imgs, epochs=10, batch_size=64, generator_epochs=10, discriminator_epochs=10):
@@ -153,8 +153,8 @@ class FaceGenGAN(nn.Module):
 		real_imgs = torch.reshape(real_imgs, (N_BATCHES*2, int(batch_size / 2)) + real_imgs.shape[1:]).to(device)
 		print(f'Real imgs shape: {real_imgs.shape} - {device}')
 
-		criterion_disriminator = nn.BCELoss()
-		criterion_generator = nn.BCELoss()
+		criterion_disriminator = nn.BCEWithLogitsLoss()
+		criterion_generator = nn.BCEWithLogitsLoss()
 
 		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
 		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
@@ -166,12 +166,8 @@ class FaceGenGAN(nn.Module):
 			loss = 0
 			print(f'[{training_phases[training_phase]}] Epoch {epoch}/{epochs} - ', end="")
 
-			generator_optimizer.zero_grad()
-			discriminator_optimizer.zero_grad()
-
 			if training_phase == 0:
-				loss, acc = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion_disriminator)
-				print(f', acc: {acc}')
+				loss = self.train_discriminator(real_imgs, N_BATCHES, batch_size, discriminator_optimizer, criterion_disriminator)
 			else:
 				loss = self.train_generator(N_BATCHES, batch_size, generator_optimizer, criterion_generator)
 
@@ -215,17 +211,17 @@ class FaceGenGAN(nn.Module):
 			#plt.clf()
 
 			#clear_output(wait=True)
-
+			with torch.no_grad():
 			# Display stuff
-			fig, axs = plt.subplots(1, 2)
-			fig.set_figwidth(15)
-			fig.set_figheight(7)
+				fig, axs = plt.subplots(1, 2)
+				fig.set_figwidth(15)
+				fig.set_figheight(7)
 
-			#for ax in axs:
-			axs[0].imshow(torch.Tensor.cpu(dummy_img.reshape((1, 1, 32, 32)))[0][0], cmap='inferno')
-			axs[1].imshow(torch.Tensor.cpu(self.generator(dummy_img)).detach().numpy()[0][0], cmap='inferno')
-			plt.show()
-			#plt.clf()
+				#for ax in axs:
+				axs[0].imshow(torch.Tensor.cpu(dummy_img.reshape((1, 1, 32, 32)))[0][0], cmap='inferno')
+				axs[1].imshow(torch.Tensor.cpu(self.generator(dummy_img)).detach().numpy()[0][0], cmap='inferno')
+				plt.show()
+				#plt.clf()
 
 
 		return losses, valid_losses
