@@ -153,8 +153,8 @@ class FaceGenGAN(nn.Module):
 		real_imgs = torch.reshape(real_imgs, (N_BATCHES*2, int(batch_size / 2)) + real_imgs.shape[1:]).to(device)
 		print(f'Real imgs shape: {real_imgs.shape} - {device}')
 
-		criterion_disriminator = nn.BCEWithLogitsLoss()
-		criterion_generator = nn.BCEWithLogitsLoss()
+		criterion_disriminator = nn.BCELoss()
+		criterion_generator = nn.BCELoss()
 
 		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
 		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
