@@ -15,6 +15,11 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(1024, 1024, 3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(1024),
             nn.ReLU(True))
+
+        self.conv9_layer = nn.Sequential(
+            nn.ConvTranspose2d(1024, 1024, 3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(1024),
+            nn.ReLU(True))
             
         self.conv2_layer = nn.Sequential(
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=False),
@@ -22,6 +27,11 @@ class Generator(nn.Module):
             nn.ReLU(True))
 
         self.conv3_layer = nn.Sequential(
+            nn.ConvTranspose2d(512, 512, 3, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(512),
+            nn.ReLU(True))
+
+        self.conv10_layer = nn.Sequential(
             nn.ConvTranspose2d(512, 512, 3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(512),
             nn.ReLU(True))
@@ -52,8 +62,10 @@ class Generator(nn.Module):
     def forward(self, features):
         out = self.conv0_layer(features)
         out = self.conv1_layer(out)
+        out = self.conv9_layer(out)
         out = self.conv2_layer(out)
         out = self.conv3_layer(out)
+        out = self.conv10_layer(out)
         out = self.conv4_layer(out)
         out = self.conv5_layer(out)
         out = self.conv6_layer(out)
