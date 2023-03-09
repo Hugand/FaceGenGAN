@@ -141,7 +141,7 @@ class FaceGenGAN(nn.Module):
 		return loss / n_batches * 2
 		
 
-	def train(self, real_imgs, epochs=10, batch_size=64, generator_epochs=10, discriminator_epochs=10):
+	def train(self, real_imgs, epochs=10, batch_size=64, generator_epochs=10, discriminator_epochs=10, generator_lr=0.0002, discriminator_lr=0.0002):
 		losses = []
 		valid_losses = []
 		# valid_features_small = Variable(valid_data[0][0].view(-1).to(device)).view(-1, 1, 32, 32).to(device)
@@ -156,8 +156,8 @@ class FaceGenGAN(nn.Module):
 		criterion_disriminator = nn.BCELoss()
 		criterion_generator = nn.BCELoss()
 
-		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
-		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+		generator_optimizer = torch.optim.Adam(self.generator.parameters(), lr=generator_lr, betas=(0.5, 0.999))
+		discriminator_optimizer = torch.optim.Adam(self.discriminator.parameters(), lr=discriminator_lr, betas=(0.5, 0.999))
 
 		dummy_img = torch.rand(1, 32*32, 1, 1, device=device)
 
